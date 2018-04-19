@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CJianWei/PPGo_ApiAdmin/libs"
+	"github.com/CJianWei/PPGo_ApiAdmin/models"
 	"github.com/astaxie/beego"
-	"github.com/george518/PPGo_ApiAdmin/libs"
-	"github.com/george518/PPGo_ApiAdmin/models"
 )
 
 type LoginController struct {
@@ -46,7 +46,7 @@ func (self *LoginController) LoginIn() {
 				user.LastIp = self.getClientIp()
 				user.LastLogin = time.Now().Unix()
 				user.Update()
-				authkey := libs.Md5([]byte(self.getClientIp() + "|" + user.Password + user.Salt))
+				authkey := self.getAuthKey(user)
 				self.Ctx.SetCookie("auth", strconv.Itoa(user.Id)+"|"+authkey, 7*86400)
 
 				self.redirect(beego.URLFor("HomeController.Index"))

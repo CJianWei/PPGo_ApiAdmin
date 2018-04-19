@@ -8,24 +8,27 @@
 package models
 
 import (
-	"time"
-
 	"github.com/astaxie/beego/orm"
+	"time"
+)
+
+const (
+	TEMPLATE_DB_NAME = "set_template"
 )
 
 type Template struct {
-	Id           int
-	TemplateName string
-	Detail       string
-	Status       int
-	CreateId     int
-	UpdateId     int
-	CreateTime   int64
-	UpdateTime   int64
+	Id           int    //	唯一标识
+	TemplateName string //模板名字
+	Detail       string //模板的详情
+	Status       int    //模板的状态
+	CreateId     int    //创建者
+	UpdateId     int    //更新者
+	CreateTime   int64  //创建时间
+	UpdateTime   int64  //更新时间
 }
 
 func (a *Template) TableName() string {
-	return TableName("set_template")
+	return TableName(TEMPLATE_DB_NAME)
 }
 
 func TemplateGetList(page, pageSize int, filters ...interface{}) ([]*Template, int64) {

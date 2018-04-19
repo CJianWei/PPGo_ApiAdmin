@@ -13,9 +13,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CJianWei/PPGo_ApiAdmin/libs"
+	"github.com/CJianWei/PPGo_ApiAdmin/models"
 	"github.com/astaxie/beego"
-	"github.com/george518/PPGo_ApiAdmin/libs"
-	"github.com/george518/PPGo_ApiAdmin/models"
 )
 
 type AdminController struct {
@@ -25,7 +25,6 @@ type AdminController struct {
 func (self *AdminController) List() {
 	self.Data["pageTitle"] = "管理员管理"
 	self.display()
-	//self.TplName = "admin/list.html"
 }
 
 func (self *AdminController) Add() {
@@ -42,9 +41,7 @@ func (self *AdminController) Add() {
 		row["role_name"] = v.RoleName
 		list[k] = row
 	}
-
 	self.Data["role"] = list
-
 	self.display()
 }
 

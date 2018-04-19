@@ -1,8 +1,8 @@
 package routers
 
 import (
+	"github.com/CJianWei/PPGo_ApiAdmin/controllers"
 	"github.com/astaxie/beego"
-	"github.com/george518/PPGo_ApiAdmin/controllers"
 )
 
 func init() {
@@ -19,7 +19,6 @@ func init() {
 	beego.AutoRouter(&controllers.ApiPublicController{})
 	beego.AutoRouter(&controllers.TemplateController{})
 	beego.AutoRouter(&controllers.ApiDocController{})
-	// beego.AutoRouter(&controllers.ApiMonitorController{})
 	beego.AutoRouter(&controllers.EnvController{})
 	beego.AutoRouter(&controllers.CodeController{})
 

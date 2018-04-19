@@ -11,26 +11,30 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
+const (
+	ADMIN_DB_NAME = "uc_admin"
+)
+
 type Admin struct {
-	Id         int
-	LoginName  string
-	RealName   string
-	Password   string
-	RoleIds    string
-	Phone      string
-	Email      string
-	Salt       string
-	LastLogin  int64
-	LastIp     string
-	Status     int
-	CreateId   int
-	UpdateId   int
-	CreateTime int64
-	UpdateTime int64
+	Id         int    //唯一标识
+	LoginName  string //登录名字
+	RealName   string //真实名字
+	Password   string //密码
+	RoleIds    string //角色ID
+	Phone      string //手机号码
+	Email      string //email
+	Salt       string //
+	LastLogin  int64  //最后登录时间
+	LastIp     string //最后登录的IP地址
+	Status     int    //当前的状态
+	CreateId   int    //创建者的ID
+	UpdateId   int    //更新者的ID
+	CreateTime int64  //创建时间
+	UpdateTime int64  //更新时间
 }
 
 func (a *Admin) TableName() string {
-	return TableName("uc_admin")
+	return TableName(ADMIN_DB_NAME)
 }
 
 func AdminAdd(a *Admin) (int64, error) {
@@ -76,21 +80,3 @@ func (a *Admin) Update(fields ...string) error {
 	}
 	return nil
 }
-
-// func RoleAuthDelete(id int) (int64, error) {
-// 	query := orm.NewOrm().QueryTable(TableName("role_auth"))
-// 	return query.Filter("role_id", id).Delete()
-// }
-
-// func RoleAuthMultiAdd(ras []*RoleAuth) (n int, err error) {
-// 	query := orm.NewOrm().QueryTable(TableName("role_auth"))
-// 	i, _ := query.PrepareInsert()
-// 	for _, ra := range ras {
-// 		_, err := i.Insert(ra)
-// 		if err == nil {
-// 			n = n + 1
-// 		}
-// 	}
-// 	i.Close() // 别忘记关闭 statement
-// 	return n, err
-// }

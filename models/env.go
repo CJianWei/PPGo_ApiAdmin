@@ -11,20 +11,24 @@ import (
 	"github.com/astaxie/beego/orm"
 )
 
+const (
+	ENV_DB_NAME = "set_env"
+)
+
 type Env struct {
-	Id         int
-	EnvName    string
-	EnvHost    string
-	Detail     string
-	Status     int
-	CreateId   int
-	UpdateId   int
-	CreateTime int64
-	UpdateTime int64
+	Id         int    //唯一标识
+	EnvName    string //环境命名
+	EnvHost    string //环境域名
+	Detail     string //详情
+	Status     int    //状态
+	CreateId   int    //创建者ID
+	UpdateId   int    //更新者ID
+	CreateTime int64  //创建时间
+	UpdateTime int64  //更新时间
 }
 
 func (a *Env) TableName() string {
-	return TableName("set_env")
+	return TableName(ENV_DB_NAME)
 }
 
 func EnvAdd(a *Env) (int64, error) {

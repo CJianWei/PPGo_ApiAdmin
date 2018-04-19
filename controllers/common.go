@@ -8,18 +8,23 @@
 package controllers
 
 import (
-	"fmt"
 	"strconv"
 	"strings"
 
+	"github.com/CJianWei/PPGo_ApiAdmin/libs"
+	"github.com/CJianWei/PPGo_ApiAdmin/models"
+	"github.com/CJianWei/ccommon/util"
 	"github.com/astaxie/beego"
-	"github.com/george518/PPGo_ApiAdmin/libs"
-	"github.com/george518/PPGo_ApiAdmin/models"
+	"github.com/astaxie/beego/logs"
 )
 
 const (
 	MSG_OK  = 0
 	MSG_ERR = -1
+)
+
+const (
+	SUPER_ADMIN_ID = 1
 )
 
 type BaseController struct {
@@ -31,13 +36,36 @@ type BaseController struct {
 	userName       string
 	loginName      string
 	pageSize       int
-	allowUrl       string
+	allowUrl       map[string]int
+	allowAction    map[string]int
 }
 
 //前期准备
 func (self *BaseController) Prepare() {
+	self.allowUrl = map[string]int{
+		"/home":  1,
+		"/index": 1,
+	}
+	self.allowAction = map[string]int{
+		"ajaxsave":    1,
+		"ajaxdel":     1,
+		"table":       1,
+		"loginin":     1,
+		"loginout":    1,
+		"getnodes":    1,
+		"start":       1,
+		"show":        1,
+		"ajaxapisave": 1,
+		"index":       1,
+		"group":       1,
+		"public":      1,
+		"env":         1,
+		"code":        1,
+		"apidetail":   1,
+	}
 	self.pageSize = 20
 	controllerName, actionName := self.GetControllerAndAction()
+
 	self.controllerName = strings.ToLower(controllerName[0 : len(controllerName)-10])
 	self.actionName = strings.ToLower(actionName)
 	self.Data["version"] = beego.AppConfig.String("version")
@@ -45,15 +73,38 @@ func (self *BaseController) Prepare() {
 	self.Data["curRoute"] = self.controllerName + "." + self.actionName
 	self.Data["curController"] = self.controllerName
 	self.Data["curAction"] = self.actionName
-	// noAuth := "ajaxsave/ajaxdel/table/loginin/loginout/getnodes/start"
-	// isNoAuth := strings.Contains(noAuth, self.actionName)
-	fmt.Println(self.controllerName)
-	if (strings.Compare(self.controllerName, "apidoc")) != 0 {
+	// 非 apidoc 控制器的 清一色拦截
+	if self.isNeedAuth() {
 		self.auth()
 	}
-
 	self.Data["loginUserId"] = self.userId
 	self.Data["loginUserName"] = self.userName
+}
+
+func (self *BaseController) isNeedAuth() bool {
+	var notNeedAuthorMap = map[string]int{
+		"apidoc": 1,
+	}
+	if notNeedAuthorMap[self.controllerName] == 0 {
+		return true
+	} else {
+		return false
+	}
+}
+
+func (self *BaseController) compare(m map[string]int, k string, v int) bool {
+	if m == nil || k == "" {
+		return false
+	}
+	if m[k] == v {
+		return true
+	}
+	return false
+}
+
+// 生成用户校验码
+func (self *BaseController) getAuthKey(user *models.Admin) string {
+	return libs.Md5([]byte(self.getClientIp() + "|" + user.Password + user.Salt))
 }
 
 //登录权限验证
@@ -62,21 +113,20 @@ func (self *BaseController) auth() {
 	arr := strings.Split(self.Ctx.GetCookie("auth"), "|")
 	self.userId = 0
 	if len(arr) == 2 {
-		idstr, password := arr[0], arr[1]
+		idstr, authkey := arr[0], arr[1]
 		userId, _ := strconv.Atoi(idstr)
 		if userId > 0 {
 			user, err := models.AdminGetById(userId)
-			if err == nil && password == libs.Md5([]byte(self.getClientIp()+"|"+user.Password+user.Salt)) {
+			// 通过用户身份的认证
+			if err == nil && authkey == self.getAuthKey(user) {
 				self.userId = user.Id
 				self.loginName = user.LoginName
 				self.userName = user.RealName
 				self.user = user
 				self.AdminAuth()
 			}
-
-			isHasAuth := strings.Contains(self.allowUrl, self.controllerName+"/"+self.actionName)
-			noAuth := "ajaxsave/ajaxdel/table/loginin/loginout/getnodes/start/show/ajaxapisave/index/group/public/env/code/apidetail"
-			isNoAuth := strings.Contains(noAuth, self.actionName)
+			var isHasAuth = self.compare(self.allowUrl, "/"+self.controllerName+"/"+self.actionName, 1)
+			var isNoAuth = self.compare(self.allowAction, self.actionName, 1)
 			if isHasAuth == false && isNoAuth == false {
 				self.Ctx.WriteString("没有权限")
 				self.ajaxMsg("没有权限", MSG_ERR)
@@ -84,7 +134,7 @@ func (self *BaseController) auth() {
 			}
 		}
 	}
-
+	// 重定向到登录界面
 	if self.userId == 0 && (self.controllerName != "login" && self.actionName != "loginin") {
 		self.redirect(beego.URLFor("LoginController.LoginIn"))
 	}
@@ -94,7 +144,7 @@ func (self *BaseController) AdminAuth() {
 	// 左侧导航栏
 	filters := make([]interface{}, 0)
 	filters = append(filters, "status", 1)
-	if self.userId != 1 {
+	if self.userId != SUPER_ADMIN_ID {
 		//普通管理员
 		adminAuthIds, _ := models.RoleAuthGetByIds(self.user.RoleIds)
 		adminAuthIdArr := strings.Split(adminAuthIds, ",")
@@ -103,11 +153,10 @@ func (self *BaseController) AdminAuth() {
 	result, _ := models.AuthGetList(1, 1000, filters...)
 	list := make([]map[string]interface{}, len(result))
 	list2 := make([]map[string]interface{}, len(result))
-	allow_url := ""
 	i, j := 0, 0
 	for _, v := range result {
 		if v.AuthUrl != " " || v.AuthUrl != "/" {
-			allow_url += v.AuthUrl
+			self.allowUrl[v.AuthUrl] = 1
 		}
 		row := make(map[string]interface{})
 		if v.Pid == 1 && v.IsShow == 1 {
@@ -134,8 +183,9 @@ func (self *BaseController) AdminAuth() {
 
 	self.Data["SideMenu1"] = list[:i]  //一级菜单
 	self.Data["SideMenu2"] = list2[:j] //二级菜单
-
-	self.allowUrl = allow_url + "/home/index"
+	logs.Informational("controllerName:%v, actionName:%v", self.controllerName, self.actionName)
+	logs.Informational("allowUrl:%v", util.S2Json(self.allowUrl))
+	logs.Informational("allowAction:%v", util.S2Json(self.allowAction))
 }
 
 // 是否POST提交

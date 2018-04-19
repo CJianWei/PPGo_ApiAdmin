@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/CJianWei/PPGo_ApiAdmin/models"
 	"github.com/astaxie/beego"
-	"github.com/george518/PPGo_ApiAdmin/models"
 )
 
 type RoleController struct {
