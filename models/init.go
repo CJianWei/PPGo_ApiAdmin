@@ -16,7 +16,7 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func Init() {
+func init() {
 	dbhost := beego.AppConfig.String("db.host")
 	dbport := beego.AppConfig.String("db.port")
 	dbuser := beego.AppConfig.String("db.user")
@@ -27,7 +27,6 @@ func Init() {
 		dbport = "3306"
 	}
 	dsn := dbuser + ":" + dbpassword + "@tcp(" + dbhost + ":" + dbport + ")/" + dbname + "?charset=utf8"
-	// fmt.Println(dsn)
 
 	if timezone != "" {
 		dsn = dsn + "&loc=" + url.QueryEscape(timezone)
