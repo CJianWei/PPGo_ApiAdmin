@@ -12,38 +12,31 @@ import (
 )
 
 type ApiDetail struct {
-	Id         int
-	SourceId   int
-	Method     int
-	ApiName    string
-	ApiUrl     string
-	Detail     string
-	Status     int
-	CreateId   int
-	AuditId    int
-	UpdateId   int
-	CreateTime int64
-	UpdateTime int64
-	AuditTime  int64
+	Id         int    // 唯一的标识
+	SourceId   int    // 隶属于哪块资源
+	Method     int    // 采用的是什么方法
+	ApiName    string // api的命名
+	ApiUrl     string // api的path
+	Detail     string // api的详情
+	Status     int    // api的当前状态
+	CreateId   int    // 创建ID
+	AuditId    int    // 审查ID
+	UpdateId   int    // 更新ID
+	CreateTime int64  // 创建时间
+	UpdateTime int64  // 更新时间
+	AuditTime  int64  // 审查时间
 }
 type ApiDetails struct {
-	Id         int
-	SourceId   int
-	Method     int
-	ApiName    string
-	ApiUrl     string
-	Detail     string
-	Status     int
-	CreateId   int
-	AuditId    int
-	UpdateId   int
-	CreateTime int64
-	UpdateTime int64
-	AuditTime  int64
+	ApiDetail
 	CreateName string
 	UpdateName string
 	AuditName  string
 }
+
+const (
+	API_SOURCE = "api_source"
+	API_DETAIL = "api_detail"
+)
 
 type ApiSourceList struct {
 	Id         int
@@ -59,13 +52,21 @@ type ApiList struct {
 
 func ApiTreeData(groupId int) ([]*ApiSourceList, error) {
 	list := make([]*ApiSourceList, 0)
-	sql := "SELECT id,source_name FROM pp_api_source WHERE group_id=?"
-	orm.NewOrm().Raw(sql, groupId).QueryRows(&list)
+	_, err := orm.NewOrm().
+		QueryTable(TableName(API_SOURCE)).
+		Filter("group_id", groupId).
+		All(&list, "id", "source_name")
+	if err != nil {
+		return nil, err
+	}
 	apiList := make([]*ApiSourceList, 0)
 	for _, apisource := range list {
 		detailList := make([]*ApiList, 0)
-		detail_sql := "SELECT id,method,api_name FROM pp_api_detail WHERE source_id=? AND status=3"
-		orm.NewOrm().Raw(detail_sql, apisource.Id).QueryRows(&detailList)
+		orm.NewOrm().
+			QueryTable(TableName(API_DETAIL)).
+			Filter("status", 3).
+			Filter("source_id", apisource.Id).
+			All(&detailList, "id", "method", "api_name")
 		apisource.ApiLists = detailList
 		apiList = append(apiList, apisource)
 	}
@@ -73,7 +74,7 @@ func ApiTreeData(groupId int) ([]*ApiSourceList, error) {
 }
 
 func (a *ApiDetail) TableName() string {
-	return TableName("api_detail")
+	return TableName(API_DETAIL)
 }
 
 func ApiDetailAdd(a *ApiDetail) (int64, error) {
@@ -82,31 +83,60 @@ func ApiDetailAdd(a *ApiDetail) (int64, error) {
 
 func ApiDetailGetById(id int) (*ApiDetail, error) {
 	r := new(ApiDetail)
-	err := orm.NewOrm().QueryTable(TableName("api_detail")).Filter("id", id).One(r)
+	err := orm.NewOrm().
+		QueryTable(TableName(API_DETAIL)).
+		Filter("id", id).
+		One(r)
 	if err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-func ApiFullDetailById(id int) (detail *ApiDetails, err error) {
-	sql := "SELECT pp_api_detail.*,a.real_name as create_name,b.real_name as update_name,c.real_name as audit_name FROM pp_api_detail LEFT JOIN pp_uc_admin as a ON pp_api_detail.create_id=a.id  LEFT JOIN pp_uc_admin as b ON pp_api_detail.update_id=b.id  LEFT JOIN pp_uc_admin as c ON pp_api_detail.audit_id=c.id  WHERE pp_api_detail.id=?"
-	err = orm.NewOrm().Raw(sql, id).QueryRow(&detail)
-	return
+func CopyDetail(from *ApiDetail, to *ApiDetails) {
+	to.Id = from.Id
+	to.SourceId = from.SourceId
+	to.Method = from.Method
+	to.ApiName = from.ApiName
+	to.ApiUrl = from.ApiUrl
+	to.Detail = from.Detail
+	to.Status = from.Status
+	to.CreateId = from.CreateId
+	to.AuditId = from.AuditId
+	to.UpdateId = from.UpdateId
+	to.CreateTime = from.CreateTime
+	to.UpdateTime = from.UpdateTime
+	to.AuditTime = from.AuditTime
 }
 
-func ApiDetailsGetById(id int) ([]*ApiDetails, error) {
-	list := make([]*ApiDetails, 0)
-	sql := "SELECT pp_api_detail.*,a.real_name as create_name,b.real_name as update_name,c.real_name as audit_name FROM pp_api_detail LEFT JOIN pp_uc_admin as a ON pp_api_detail.create_id=a.id  LEFT JOIN pp_uc_admin as b ON pp_api_detail.update_id=b.id LEFT JOIN pp_uc_admin as c ON pp_api_detail.audit_id=c.id WHERE pp_api_detail.source_id=?"
-	orm.NewOrm().Raw(sql, id).QueryRows(&list)
-
-	return list, nil
+func ApiFullDetailById(id int) (detail *ApiDetails, err error) {
+	detail_tmp, err := ApiDetailGetById(id)
+	if err != nil {
+		return
+	}
+	ids := []int{detail_tmp.CreateId, detail_tmp.AuditId, detail_tmp.UpdateId}
+	var admins []*Admin
+	_, err = orm.NewOrm().QueryTable(TableName(ADMIN_DB_NAME)).Filter("id__in", ids).All(&admins, "id", "real_name")
+	if err != nil {
+		return
+	}
+	var idx = map[int]string{}
+	for _, admin := range admins {
+		idx[admin.Id] = admin.RealName
+	}
+	detail = &ApiDetails{
+		AuditName:  idx[detail_tmp.AuditId],
+		CreateName: idx[detail_tmp.CreateId],
+		UpdateName: idx[detail_tmp.UpdateId],
+	}
+	CopyDetail(detail_tmp, detail)
+	return
 }
 
 func ApiDetailGetList(page, pageSize int, filters ...interface{}) ([]*ApiDetail, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*ApiDetail, 0)
-	query := orm.NewOrm().QueryTable(TableName("api_detail"))
+	query := orm.NewOrm().QueryTable(TableName(API_DETAIL))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -115,7 +145,6 @@ func ApiDetailGetList(page, pageSize int, filters ...interface{}) ([]*ApiDetail,
 	}
 	total, _ := query.Count()
 	query.OrderBy("-id").Limit(pageSize, offset).All(&list)
-
 	return list, total
 }
 
@@ -127,9 +156,12 @@ func (a *ApiDetail) Update(fields ...string) error {
 }
 
 func ApiChangeStatus(ids string, status int) (num int64, err error) {
-
-	sql := "UPDATE pp_api_detail set status=? where id in (" + ids + ")"
-	res, err := orm.NewOrm().Raw(sql, status).Exec()
+	var sql = QueryBuilder().
+		Update(TableName(API_DETAIL)).
+		Set("status=?").
+		Where("id in (?)").
+		String()
+	res, err := orm.NewOrm().Raw(sql, status, ids).Exec()
 	num = 0
 	if err == nil {
 		num, _ = res.RowsAffected()

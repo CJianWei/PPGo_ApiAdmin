@@ -43,3 +43,12 @@ func init() {
 func TableName(name string) string {
 	return beego.AppConfig.String("db.prefix") + name
 }
+
+func QueryBuilder(driver ...string) orm.QueryBuilder {
+	default_driver := "mysql"
+	if len(driver) > 0 {
+		default_driver = driver[0]
+	}
+	qb, _ := orm.NewQueryBuilder(default_driver)
+	return qb
+}
