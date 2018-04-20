@@ -23,7 +23,7 @@ type Admin struct {
 	RoleIds    string //角色ID
 	Phone      string //手机号码
 	Email      string //email
-	Salt       string //
+	Salt       string //配置做密码校验
 	LastLogin  int64  //最后登录时间
 	LastIp     string //最后登录的IP地址
 	Status     int    //当前的状态
@@ -43,7 +43,7 @@ func AdminAdd(a *Admin) (int64, error) {
 
 func AdminGetByName(loginName string) (*Admin, error) {
 	a := new(Admin)
-	err := orm.NewOrm().QueryTable(TableName("uc_admin")).Filter("login_name", loginName).One(a)
+	err := orm.NewOrm().QueryTable(TableName(ADMIN_DB_NAME)).Filter("login_name", loginName).One(a)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func AdminGetByName(loginName string) (*Admin, error) {
 func AdminGetList(page, pageSize int, filters ...interface{}) ([]*Admin, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*Admin, 0)
-	query := orm.NewOrm().QueryTable(TableName("uc_admin"))
+	query := orm.NewOrm().QueryTable(TableName(ADMIN_DB_NAME))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -67,7 +67,7 @@ func AdminGetList(page, pageSize int, filters ...interface{}) ([]*Admin, int64) 
 
 func AdminGetById(id int) (*Admin, error) {
 	r := new(Admin)
-	err := orm.NewOrm().QueryTable(TableName("uc_admin")).Filter("id", id).One(r)
+	err := orm.NewOrm().QueryTable(TableName(ADMIN_DB_NAME)).Filter("id", id).One(r)
 	if err != nil {
 		return nil, err
 	}

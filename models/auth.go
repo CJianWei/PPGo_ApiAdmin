@@ -8,8 +8,6 @@
 package models
 
 import (
-	"fmt"
-
 	"github.com/astaxie/beego/orm"
 )
 
@@ -29,14 +27,16 @@ type Auth struct {
 	UpdateTime int64
 }
 
+const UC_AUTH = "uc_auth"
+
 func (a *Auth) TableName() string {
-	return TableName("uc_auth")
+	return TableName(UC_AUTH)
 }
 
 func AuthGetList(page, pageSize int, filters ...interface{}) ([]*Auth, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*Auth, 0)
-	query := orm.NewOrm().QueryTable(TableName("uc_auth"))
+	query := orm.NewOrm().QueryTable(TableName(UC_AUTH))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -49,27 +49,6 @@ func AuthGetList(page, pageSize int, filters ...interface{}) ([]*Auth, int64) {
 	return list, total
 }
 
-func AuthGetListByIds(authIds string, userId int) ([]*Auth, error) {
-
-	list1 := make([]*Auth, 0)
-	var list []orm.Params
-	//list:=[]orm.Params
-	var err error
-	if userId == 1 {
-		//超级管理员
-		_, err = orm.NewOrm().Raw("select id,auth_name,auth_url,pid,icon,is_show from pp_uc_auth where status=? order by pid asc,sort asc", 1).Values(&list)
-	} else {
-		_, err = orm.NewOrm().Raw("select id,auth_name,auth_url,pid,icon,is_show from pp_uc_auth where status=1 and id in("+authIds+") order by pid asc,sort asc", authIds).Values(&list)
-	}
-
-	for k, v := range list {
-		fmt.Println(k, v)
-	}
-
-	fmt.Println(list)
-	return list1, err
-}
-
 func AuthAdd(auth *Auth) (int64, error) {
 	return orm.NewOrm().Insert(auth)
 }
@@ -77,7 +56,7 @@ func AuthAdd(auth *Auth) (int64, error) {
 func AuthGetById(id int) (*Auth, error) {
 	a := new(Auth)
 
-	err := orm.NewOrm().QueryTable(TableName("uc_auth")).Filter("id", id).One(a)
+	err := orm.NewOrm().QueryTable(TableName(UC_AUTH)).Filter("id", id).One(a)
 	if err != nil {
 		return nil, err
 	}

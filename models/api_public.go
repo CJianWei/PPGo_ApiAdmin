@@ -25,14 +25,16 @@ type ApiPublic struct {
 	UpdateTime    int64
 }
 
+const API_PUBLIC = "api_public"
+
 func (a *ApiPublic) TableName() string {
-	return TableName("api_public")
+	return TableName(API_PUBLIC)
 }
 
 func ApiPublicGetList(page, pageSize int, filters ...interface{}) ([]*ApiPublic, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*ApiPublic, 0)
-	query := orm.NewOrm().QueryTable(TableName("api_public"))
+	query := orm.NewOrm().QueryTable(TableName(API_PUBLIC))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -51,15 +53,19 @@ func ApiPublicAdd(a *ApiPublic) (int64, error) {
 
 func ApiPublicGetById(id int) (ApiPublic, error) {
 	var list ApiPublic
-	query := orm.NewOrm().QueryTable(TableName("api_public"))
+	query := orm.NewOrm().QueryTable(TableName(API_PUBLIC))
 	query.Filter("id", id).Filter("status", 1).One(&list)
 	return list, nil
 }
 
 func ApiPublicGetByIds(ids string) ([]*ApiPublic, error) {
 	list := make([]*ApiPublic, 0)
-	sql := "SELECT * FROM pp_api_public WHERE id in(" + ids + ")"
-	orm.NewOrm().Raw(sql).QueryRows(&list)
+	var sql = QueryBuilder().
+		Select("*").
+		From(TableName(API_PUBLIC)).
+		Where("id in (?) ").
+		String()
+	orm.NewOrm().Raw(sql, ids).QueryRows(&list)
 
 	return list, nil
 }
@@ -72,7 +78,13 @@ func (a *ApiPublic) Update(fields ...string) error {
 }
 
 func (a *ApiPublic) Delete(id int64, update_id int) (int64, error) {
-	sql := "UPDATE pp_api_public SET status=0,update_id=?,update_time=? WHERE id=?"
+	sql := QueryBuilder().
+		Update(TableName(API_PUBLIC)).
+		Set("status=0").
+		Set("update_id=?").
+		Set("update_time=?").
+		Where("id=?").
+		String()
 	res, err := orm.NewOrm().Raw(sql, update_id, time.Now().Unix(), id).Exec()
 	if err == nil {
 		num, _ := res.RowsAffected()

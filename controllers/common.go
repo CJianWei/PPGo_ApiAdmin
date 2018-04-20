@@ -8,14 +8,11 @@
 package controllers
 
 import (
-	"strconv"
-	"strings"
-
 	"github.com/CJianWei/PPGo_ApiAdmin/libs"
 	"github.com/CJianWei/PPGo_ApiAdmin/models"
-	"github.com/CJianWei/ccommon/util"
 	"github.com/astaxie/beego"
-	"github.com/astaxie/beego/logs"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -183,9 +180,6 @@ func (self *BaseController) AdminAuth() {
 
 	self.Data["SideMenu1"] = list[:i]  //一级菜单
 	self.Data["SideMenu2"] = list2[:j] //二级菜单
-	logs.Informational("controllerName:%v, actionName:%v", self.controllerName, self.actionName)
-	logs.Informational("allowUrl:%v", util.S2Json(self.allowUrl))
-	logs.Informational("allowAction:%v", util.S2Json(self.allowAction))
 }
 
 // 是否POST提交

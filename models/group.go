@@ -25,8 +25,10 @@ type Group struct {
 	UpdateTime   int64
 }
 
+const SET_GROUP = "set_group"
+
 func (a *Group) TableName() string {
-	return TableName("set_group")
+	return TableName(SET_GROUP)
 }
 
 func GroupAdd(a *Group) (int64, error) {
@@ -35,7 +37,7 @@ func GroupAdd(a *Group) (int64, error) {
 
 func GroupGetByName(groupName string) (*Group, error) {
 	a := new(Group)
-	err := orm.NewOrm().QueryTable(TableName("set_group")).Filter("group_name", groupName).One(a)
+	err := orm.NewOrm().QueryTable(TableName(SET_GROUP)).Filter("group_name", groupName).One(a)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +47,7 @@ func GroupGetByName(groupName string) (*Group, error) {
 func GroupGetList(page, pageSize int, filters ...interface{}) ([]*Group, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*Group, 0)
-	query := orm.NewOrm().QueryTable(TableName("set_group"))
+	query := orm.NewOrm().QueryTable(TableName(SET_GROUP))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -59,7 +61,7 @@ func GroupGetList(page, pageSize int, filters ...interface{}) ([]*Group, int64) 
 
 func GroupGetById(id int) (*Group, error) {
 	r := new(Group)
-	err := orm.NewOrm().QueryTable(TableName("set_group")).Filter("id", id).One(r)
+	err := orm.NewOrm().QueryTable(TableName(SET_GROUP)).Filter("id", id).One(r)
 	if err != nil {
 		return nil, err
 	}

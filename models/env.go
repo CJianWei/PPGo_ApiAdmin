@@ -37,7 +37,7 @@ func EnvAdd(a *Env) (int64, error) {
 
 func EnvGetByName(EnvName string) (*Env, error) {
 	a := new(Env)
-	err := orm.NewOrm().QueryTable(TableName("set_env")).Filter("env_name", EnvName).One(a)
+	err := orm.NewOrm().QueryTable(TableName(ENV_DB_NAME)).Filter("env_name", EnvName).One(a)
 	if err != nil {
 		return nil, err
 	}
@@ -47,7 +47,7 @@ func EnvGetByName(EnvName string) (*Env, error) {
 func EnvGetList(page, pageSize int, filters ...interface{}) ([]*Env, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*Env, 0)
-	query := orm.NewOrm().QueryTable(TableName("set_env"))
+	query := orm.NewOrm().QueryTable(TableName(ENV_DB_NAME))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -61,15 +61,15 @@ func EnvGetList(page, pageSize int, filters ...interface{}) ([]*Env, int64) {
 
 func EnvGetByIds(ids string) ([]*Env, error) {
 	list := make([]*Env, 0)
-	sql := "SELECT * FROM pp_set_env WHERE id in(" + ids + ")"
-	orm.NewOrm().Raw(sql).QueryRows(&list)
+	sql := QueryBuilder().Set("*").From(TableName(ENV_DB_NAME)).Where("id in (?)").String()
+	orm.NewOrm().Raw(sql, ids).QueryRows(&list)
 
 	return list, nil
 }
 
 func EnvGetById(id int) (*Env, error) {
 	r := new(Env)
-	err := orm.NewOrm().QueryTable(TableName("set_env")).Filter("id", id).One(r)
+	err := orm.NewOrm().QueryTable(TableName(ENV_DB_NAME)).Filter("id", id).One(r)
 	if err != nil {
 		return nil, err
 	}

@@ -34,7 +34,7 @@ func (a *Template) TableName() string {
 func TemplateGetList(page, pageSize int, filters ...interface{}) ([]*Template, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*Template, 0)
-	query := orm.NewOrm().QueryTable(TableName("set_template"))
+	query := orm.NewOrm().QueryTable(TableName(TEMPLATE_DB_NAME))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -53,7 +53,7 @@ func TemplateAdd(a *Template) (int64, error) {
 
 func TemplateGetById(id int) (Template, error) {
 	var list Template
-	query := orm.NewOrm().QueryTable(TableName("set_template"))
+	query := orm.NewOrm().QueryTable(TableName(TEMPLATE_DB_NAME))
 	query.Filter("id", id).Filter("status", 1).One(&list)
 	return list, nil
 }
@@ -66,7 +66,13 @@ func (a *Template) Update(fields ...string) error {
 }
 
 func (a *Template) Delete(id int64, update_id int) (int64, error) {
-	sql := "UPDATE pp_set_template SET status=0,update_id=?,update_time=? WHERE id=?"
+	sql := QueryBuilder().
+		Update(TableName(TEMPLATE_DB_NAME)).
+		Set("status=0").
+		Set("update_id=?").
+		Update("update_time=?").
+		Where("id=?").
+		String()
 	res, err := orm.NewOrm().Raw(sql, update_id, time.Now().Unix(), id).Exec()
 	if err == nil {
 		num, _ := res.RowsAffected()

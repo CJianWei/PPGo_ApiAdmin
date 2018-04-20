@@ -25,7 +25,7 @@ type ApiSource struct {
 }
 
 func (a *ApiSource) TableName() string {
-	return TableName("api_source")
+	return TableName(API_SOURCE)
 }
 
 func ApiSourceAdd(a *ApiSource) (int64, error) {
@@ -34,7 +34,7 @@ func ApiSourceAdd(a *ApiSource) (int64, error) {
 
 func ApiSourceGetByName(ApiSourceName string) (*ApiSource, error) {
 	a := new(ApiSource)
-	err := orm.NewOrm().QueryTable(TableName("api_source")).Filter("source_name", ApiSourceName).One(a)
+	err := orm.NewOrm().QueryTable(TableName(API_SOURCE)).Filter("source_name", ApiSourceName).One(a)
 	if err != nil {
 		return nil, err
 	}
@@ -44,7 +44,7 @@ func ApiSourceGetByName(ApiSourceName string) (*ApiSource, error) {
 func ApiSourceGetList(page, pageSize int, filters ...interface{}) ([]*ApiSource, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*ApiSource, 0)
-	query := orm.NewOrm().QueryTable(TableName("api_source"))
+	query := orm.NewOrm().QueryTable(TableName(API_SOURCE))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -59,7 +59,7 @@ func ApiSourceGetList(page, pageSize int, filters ...interface{}) ([]*ApiSource,
 
 func ApiSourceGetById(id int) (*ApiSource, error) {
 	r := new(ApiSource)
-	err := orm.NewOrm().QueryTable(TableName("api_source")).Filter("id", id).One(r)
+	err := orm.NewOrm().QueryTable(TableName(API_SOURCE)).Filter("id", id).One(r)
 	if err != nil {
 		return nil, err
 	}

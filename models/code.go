@@ -23,8 +23,10 @@ type Code struct {
 	UpdateTime int64
 }
 
+const SET_CODE = "set_code"
+
 func (a *Code) TableName() string {
-	return TableName("set_code")
+	return TableName(SET_CODE)
 }
 
 func CodeAdd(a *Code) (int64, error) {
@@ -33,7 +35,7 @@ func CodeAdd(a *Code) (int64, error) {
 
 func CodeGetByName(CodeName string) (*Code, error) {
 	a := new(Code)
-	err := orm.NewOrm().QueryTable(TableName("set_code")).Filter("code", CodeName).One(a)
+	err := orm.NewOrm().QueryTable(TableName(SET_CODE)).Filter("code", CodeName).One(a)
 	if err != nil {
 		return nil, err
 	}
@@ -43,7 +45,7 @@ func CodeGetByName(CodeName string) (*Code, error) {
 func CodeGetList(page, pageSize int, filters ...interface{}) ([]*Code, int64) {
 	offset := (page - 1) * pageSize
 	list := make([]*Code, 0)
-	query := orm.NewOrm().QueryTable(TableName("set_code"))
+	query := orm.NewOrm().QueryTable(TableName(SET_CODE))
 	if len(filters) > 0 {
 		l := len(filters)
 		for k := 0; k < l; k += 2 {
@@ -58,15 +60,19 @@ func CodeGetList(page, pageSize int, filters ...interface{}) ([]*Code, int64) {
 
 func CodeGetByIds(ids string) ([]*Code, error) {
 	list := make([]*Code, 0)
-	sql := "SELECT * FROM pp_set_code WHERE id in(" + ids + ")"
-	orm.NewOrm().Raw(sql).QueryRows(&list)
+	sql := QueryBuilder().
+		Set("*").
+		From(TableName(SET_CODE)).
+		Where("id in (?)").
+		String()
+	orm.NewOrm().Raw(sql, ids).QueryRows(&list)
 
 	return list, nil
 }
 
 func CodeGetById(id int) (*Code, error) {
 	r := new(Code)
-	err := orm.NewOrm().QueryTable(TableName("set_code")).Filter("id", id).One(r)
+	err := orm.NewOrm().QueryTable(TableName(SET_CODE)).Filter("id", id).One(r)
 	if err != nil {
 		return nil, err
 	}
